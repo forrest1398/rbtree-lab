@@ -89,7 +89,7 @@ void rotation_right(rbtree* t ,node_t* target ){
   target->parent=y;
 }
 
-// DONE ----------------upper
+
 node_t *rbtree_insert(rbtree *t, const key_t key) {
   
   node_t* new_node = new_red_node(t,key);
@@ -175,29 +175,96 @@ void rbtree_insert_fixup(rbtree *t, node_t* z){
   t->root->color=RBTREE_BLACK;
 }
 
-
-// TODO ---------------- under
-node_t *rbtree_find(const rbtree *t, const key_t key) {
-  // TODO: implement find
-  return t->root;
-}
-
 node_t *rbtree_min(const rbtree *t) {
   // TODO: implement find
-  return t->root;
-}
+  node_t* temp = t->root;
+  node_t* nil = t->nil;
+  // 트리가 비어있으면 
+  if(temp==nil)return nil;
 
+  // 아니면 
+  while(1){
+      // 왼쪽이 자식이 없는 노드 반환
+      if(temp->left == nil)return temp;
+      // 있으면 왼쪽 이동
+      temp=temp->left;   
+  }
+}
 node_t *rbtree_max(const rbtree *t) {
-  // TODO: implement find
-  return t->root;
+  node_t* temp = t->root;
+  node_t* nil = t->nil;
+  if(temp==nil)return nil;
+  while(1){
+      if(temp->right == nil)return temp;
+      temp=temp->right;   
+  }
 }
 
-int rbtree_erase(rbtree *t, node_t *p) {
-  // TODO: implement erase
-  return 0;
+node_t *rbtree_find(const rbtree *t, const key_t key) {
+  // TODO: implement find
+    // TODO: implement find
+     node_t* temp = t->root;
+
+    // 트리가 비어있다면
+    
+    // 아니라면
+    while(1){
+        // 못 찾았으면 
+        if(temp==t->nil){
+            return NULL;
+        }
+        // 같은 값 찾으면 반환
+        if(temp->key == key){
+            return temp;
+        }
+        // 현재 노드보다 key값이 작다면
+        if(temp->key > key){
+            // 왼쪽으로 이동
+            temp=temp->left;    
+        }
+        // 크다면
+        else{
+            temp=temp->right;
+        }
+    }
+}
+
+void inorder_travel(const rbtree *t,node_t* start,key_t*arr,int* i,int N){
+    // 비어있거나, N번 반복했다면
+    if(start==t->nil || *i == N){
+        return;
+    }
+    // 리프노드일 경우
+    else if(start->left==t->nil && start->right==t->nil){
+        arr[*i]=start->key;
+        *i+=1;
+    }
+    // 중위순회
+    else{
+        if(start->left!=t->nil)inorder_travel(t,start->left,arr,i,N);
+        arr[*i]=start->key;
+        *i+=1;
+        if(start->right!=t->nil)inorder_travel(t,start->right,arr,i,N);
+    }
 }
 
 int rbtree_to_array(const rbtree *t, key_t *arr, const size_t n) {
   // TODO: implement to_array
+    node_t* start = t->root;
+    int idx=0;
+    int* i = &idx;
+    inorder_travel(t,start,arr,i,n);
+    return 0;
+}
+
+// TODO ---------------- under
+
+int rbtree_erase(rbtree *t, node_t *p) {
+  // TODO: implement erase
+
+
+
+
+  
   return 0;
 }

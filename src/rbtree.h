@@ -35,6 +35,7 @@ node_t *rbtree_min(const rbtree *);
 node_t *rbtree_max(const rbtree *);
 int rbtree_erase(rbtree *, node_t *);
 
+void inorder_travel(const rbtree *,node_t* ,key_t*,int* ,int);
 int rbtree_to_array(const rbtree *, key_t *, const size_t);
 
 #endif  // _RBTREE_H_
