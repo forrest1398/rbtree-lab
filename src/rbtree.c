@@ -73,18 +73,14 @@ void rotation_left(rbtree* t ,node_t* target){
   y->left=target;
   target->parent=y;
 }
-void rotation_right(rbtree* t ,node_t* target ){
-  
+void rotation_right(rbtree* t ,node_t* target){
   node_t* y= target->left;
-  
   target->left = y->right;
-  if(y->right != t->nil)y->right->parent=target;
-  
+  if(y->left != t->nil)y->right->parent=target;
   y->parent=target->parent;
   if(target->parent==t->nil)t->root = y;
   else if(target == target->parent->left) target->parent->left=y;
   else target->parent->right=y;
-  
   y->right=target;
   target->parent=y;
 }
@@ -107,7 +103,7 @@ node_t *rbtree_insert(rbtree *t, const key_t key) {
   // 만약 비어있는 트리였다면 루트로 설정
   if(y==t->nil)t->root = new_node;
   // 아니라면 key값을 통해 이동한 위치에 연결
-  else if(y->key<new_node->key)y->left=new_node;
+  else if(new_node->key<y->key)y->left=new_node;
   else y->right=new_node;
   
   //추가 후 balancing
@@ -115,6 +111,7 @@ node_t *rbtree_insert(rbtree *t, const key_t key) {
   
   return new_node;
 }
+
 void rbtree_insert_fixup(rbtree *t, node_t* z){
   // 부모노드의 색이 빨강이고
   while(z->parent->color==RBTREE_RED){
@@ -259,12 +256,129 @@ int rbtree_to_array(const rbtree *t, key_t *arr, const size_t n) {
 
 // TODO ---------------- under
 
+// 자식이 한개만 있는 경우 자식과 조부모를 연결
+void transplant(rbtree* t,node_t *a,node_t *b){
+  if(a->parent == t->nil)t->root=b;
+  // 부모가 조부모의 왼쪽 자식이었으면
+  else if(a==a->parent->left)a->parent->left = b;
+  // 부모가 조부모의 오른쪽 자식이었으면
+  else a->parent->right = b;
+  b->parent = a->parent;
+}
+
 int rbtree_erase(rbtree *t, node_t *p) {
-  // TODO: implement erase
+  // balancing할 때 extra black 이 붙어야 하는 노드 저장할 변수 
+  node_t* x;
 
-
-
-
+  // 자식 0개,1개일 경우난 자기색이 색 없어지기 때문에 
+  // 없어지는 노드의 색 초기값은 자기 색깔
+  node_t* y = p;
+  color_t y_origin_color = y->color;
   
+  // 오른쪽 자식만 있거나 자식이 없으면
+  if(p->left == t->nil){
+    x = p->right;
+    transplant(t,p,p->right);
+  }
+  // 왼쪽 자식만 있거나 자식이 없으면
+  else if(p->right == t->nil){
+    x = p->left;
+    transplant(t,p,p->left);
+  }
+  // 자식이 2개라면 
+  // 없어지는 색은 successor의 색이 된다.
+  else{
+    // successor 찾기
+    node_t* temp=p->right;
+    while(temp->left!=t->nil){
+      temp=temp->left;
+    }
+    y = temp;
+    y_origin_color = y->color;
+    // successor는 왼쪽 자식은 없으니 오른쪽 자식만 확인
+    x = y->right;
+    
+    // 삭제대상 오른쪽 자식이 successor라면
+    if(y==p->right) x->parent=y;
+    // 오 -> 왼 -> 왼...으로 successor를 찾았다면
+    else{
+      // 오른쪽 자식 있든 없든 조부모랑 연결
+      transplant(t,y,y->right);
+      y->right=p->right;
+      y->right->parent = y;
+    }
+    transplant(t,p,y);
+    y->left = p->left;
+    y->left->parent=y;
+    y->color = p->color;
+  }
+  // 삭제시 balancing은 삭제된 노드의 색이 검은  색일 경우에만 하면 된다.
+  if(y_origin_color==RBTREE_BLACK)rbtree_delete_fixup(t,x);
   return 0;
+}
+void rbtree_delete_fixup(rbtree* t,node_t* x){
+  // 시작시 x의 색은 black
+  // x가 루트이면서 black일 때, 혹은 x가 red가 되면 종료
+  // x의 형제노드를 저장할 노드 w
+  node_t* w;
+  while(x!=t->root && x->color == RBTREE_BLACK){
+    // x가 부모의 왼쪽 자식이라면
+    if(x == x->parent->left){
+      // x의 형제노드 w
+      w = x->parent->right;
+      // Case.1 형제의 색이 빨강이라면 -> 자식은 무조건 다 black -----------------------
+      // Case.2,3,4중 하나로 만들기 위해 회전시키고 형제를 갱신하는 작업을 실행한다.
+      if(w->color==RBTREE_RED){
+        // 형제와 부모의 색을 바꾸고 회전
+        w->color=RBTREE_BLACK;
+        x->parent->color=RBTREE_RED;
+        rotation_left(t,x->parent);
+        // 회전시 w는 x의 부모노드가 된다.
+        // 다시 형제노드로 지정해주기
+        w = x->parent->right;
+      }
+      
+      // Case.2 형제가 black이고 조카노드들도 다 black인 경우 -------------------------
+      // Case.1을 지나왔기 때문에 형제는 반드시 black이다.
+      if(w->left->color==RBTREE_BLACK && w->right->color==RBTREE_BLACK){
+        // 형제의 색을 red로 바꿔주고
+        w->color=RBTREE_RED;
+        // x를 갱신함으로써 다시 Case들을 확인하게 한다.
+        x=x->parent;
+      }
+
+      // 조카노드가 B,B가 아니라면
+      else{
+
+        // Case.3 형제는 black, 오른쪽 조카 black , 왼쪽 조카 red --------------------
+        // 오른쪽이 black이라면 왼쪽은 상위 조건문에 의해 red
+        if (w->right->color==RBTREE_BLACK){
+          // Case.4를 만들기 위해 형제노드 기준 색 바꾸고 오른쪽 회전
+          w->left->color=RBTREE_BLACK;
+          w->color=RBTREE_RED;
+          rotation_right(t,w);
+          // 회전했으니 형제노드 다시 갱신
+          w=x->parent->right;
+        }
+        
+        // Case.4 형제는 black , 오른쪽 조카 red , 왼쪽 조카는 상관없다.-----------------
+        // Case.3을 지나왔기 때문에 오른쪽 조카는 반드시 red가 된다.
+        // 부모와 형제의 색 바꾸고 회전
+        w->color = x->parent->color;
+        x->parent->color = RBTREE_BLACK;
+        w->right->color=RBTREE_BLACK;
+        rotation_left(t,x->parent);
+        //Case.4의 경우 Black Height를 해결하는 Case 이기 때문에 x를 root로 지정해줘서 반복문을 탈출한다.
+        break;
+      }
+    }
+    // 부모의 오른쪽 자식이라면
+    // 왼쪽 코드 반전시키면 된다.
+    else{
+
+    }
+
+  }
+  // 루트노드 색 black으로 바꿔주고 종료
+  t->root=RBTREE_BLACK;
 }

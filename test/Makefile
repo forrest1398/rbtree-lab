@@ -1,7 +1,6 @@
 .PHONY: test
 
-# sentinel 노드로 구현
-CFLAGS=-I ../src -Wall -g -DSENTINEL
+CFLAGS=-I ../src -Wall -g -DSENTINEL 
 
 test: test-rbtree
 	./test-rbtree
