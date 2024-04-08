@@ -100,7 +100,7 @@ node_t *rbtree_insert(rbtree *t, const key_t key) {
   while(x!=t->nil){
     y=x;
     if (key < x->key) x=x->left;
-    else x->right;
+    else x=x->right;
   }
   new_node->parent=y;
   
@@ -111,15 +111,68 @@ node_t *rbtree_insert(rbtree *t, const key_t key) {
   else y->right=new_node;
   
   //추가 후 balancing
-  node_t *rbtree_insert_fixup(t,new_node);
+  rbtree_insert_fixup(t,new_node);
   
   return new_node;
 }
-
-node_t *rbtree_insert_fixup(rbtree *t, node_t* target){
+void rbtree_insert_fixup(rbtree *t, node_t* z){
+  // 부모노드의 색이 빨강이고
+  while(z->parent->color==RBTREE_RED){
+    // 만약 부모 노드가 할아버지 노드의 왼쪽 자식이라면
+    if(z->parent==z->parent->parent->left){
+      node_t* y = z->parent->parent->right; // 삼촌노드 y
+      
+      // case.1 부모,삼촌 다 빨강이라면 
+      if(y->color==RBTREE_RED){
+        // 부모,삼촌과 할아버지의 색깔 교환
+        z->parent->color = RBTREE_BLACK;
+        y->color = RBTREE_BLACK;
+        z->parent->parent->color=RBTREE_RED;
+        
+        //대상 노드를 할아버지로 바꿔서 연쇄적으로 확인
+        z=z->parent->parent;
+      }
+      // case.2 부모는 빨강, 삼촌은 검정이라면 
+      else{
+        // case.2-1 부모는 할아버지의 왼쪽 + 대상 노드는 부모의 오른쪽
+        // 즉, 꺽여있다면
+        // 왼,왼 만들기 위해 부모기준 왼쪽 회전
+        if(z == z->parent->right){
+          //회전하면 z는 어차피 대상(손자)노드를 가리키게 된다.
+          z=z->parent;
+          rotation_left(t,z);
+        }
   
-
-
+        //위 코드를 지났다면 왼,왼인 상태
+        // 색 바꾸고 할아버지 기준 오른쪽 회전
+        z->parent->color=RBTREE_BLACK;
+        z->parent->parent->color=RBTREE_RED;
+        rotation_right(t,z->parent->parent);
+      }
+    }
+    // 부모가 할아버지의 오른쪽 자식이라면
+    // 위 코드와 구성 동일, 좌우반전
+    else{
+      node_t* y = z->parent->parent->left;
+      if(y->color==RBTREE_RED){
+        z->parent->color = RBTREE_BLACK;
+        y->color = RBTREE_BLACK;
+        z->parent->parent->color=RBTREE_RED;
+        z=z->parent->parent;
+      }
+      else{
+        if(z == z->parent->left){
+          z=z->parent;
+          rotation_right(t,z);
+        }
+        z->parent->color=RBTREE_BLACK;
+        z->parent->parent->color=RBTREE_RED;
+        rotation_left(t,z->parent->parent);
+      }
+    }
+  }
+  //끝으로 루트노드 검정으로 고정
+  t->root->color=RBTREE_BLACK;
 }
 
 

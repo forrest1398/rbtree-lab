@@ -27,7 +27,7 @@ void delete_rbtree(rbtree *);
 void rotation_left(rbtree*,node_t*);
 void rotation_right(rbtree*,node_t*);
 
-node_t *rbtree_insert_fixup(rbtree *, node_t*);
+void rbtree_insert_fixup(rbtree *, node_t*);
 node_t *rbtree_insert(rbtree *, const key_t);
 
 node_t *rbtree_find(const rbtree *, const key_t);
